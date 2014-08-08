@@ -1,79 +1,171 @@
-function columnLayout(paddingWidth, maxColumnWidths){
+var stripAnsi = require('strip-ansi'),
+  sprintf = require('sprintf-js').sprintf,
+  colors = require('colors');
+
+function strlen(str){
+  if(!str) return 0;
+  return stripAnsi(str.toString()).length;
+}
+
+function columnLayout(paddingWidth, columnWidthOption){
+  var api,
+    options,
+    paddingWidth,
+    columnWidths,
+    maxColumnWidths,
+    columnMappers,
+    rowMappers,
+    maxColumnWidth;
+
+  if(Array.isArray(columnWidthOption)){
+    maxColumnWidths = columnWidthOption;
+  } else if(typeof columnWidthOption === 'number'){
+    maxColumnWidth = columnWidthOption;
+  }
+
+  if(typeof paddingWidth === 'object') {
+    options = paddingWidth;
+    paddingWidth = options.padding;
+    columnWidths = options.columnWidths;
+    maxColumnWidths = options.maxColumnWidths;
+    maxColumnWidth = options.maxColumnWidth;
+    columnMappers = options.columnMappers;
+    rowMappers = options.rowMappers;
+  }
+
+  columnMappers = columnMappers || [];
+  rowMappers = rowMappers || [];
   paddingWidth = paddingWidth || 0;
-  maxColumnWidths = maxColumnWidths || Infinity;
+  columnWidths = columnWidths || [];
+  maxColumnWidths = maxColumnWidths || [];
+  maxColumnWidth = maxColumnWidth || Infinity;
 
   var padding = sprintf('%' + paddingWidth + 's', '');
   var rows = [];
   var columns = [];
 
-  function getMaxColumnWidth(columnIndex){
-    if(Array.isArray(maxColumnWidths)) return maxColumnWidths[columnIndex];
-    return maxColumnWidths;
+  function getColumnWidth(index){
+    var maxColumnWidth = maxColumnWidths[index] || maxColumnWidth || Infinity;
+    var columnWidth = columnWidths[index] || 'auto';
+    
+    if(columnWidth === 'auto'){
+      return Math.min(maxStringLength(columns[index]), maxColumnWidth);
+    } else {
+      return columnWidth;
+    }
   }
 
-  function addColumn(){
+  function addRow(){
     var row = [].slice.call(arguments);
-    
-    // Add borders
     
     row.forEach(function(element, index){
       var column = columns[index];
       if(!column) column = columns[index] = [];
-      column.push(element);
+
+      if(Array.isArray(element)){
+        column.push(element[0]);
+      } else {
+        column.push(element);
+      }
     });
 
     rows.push(row);
-
-    return function(mapper){
-      row.forEach(function(string, index){
-        row[index] = mapper(string);
-      });
-    }
   }
+  api = addRow;
+  api.row = addRow;
 
-  addColumn.toString = function(){
-    var columnWidths = columns.map(function(column){
-      return maxStringLength(column);
-    });
+  function addColoredRow(){
+    var row = [].slice.call(arguments),
+      colorString = row.shift(0);
+    
+    function colorMapper(string){
+      colorString.split('.').forEach(function(colorName){
+        string = colors[colorName](string);
+      });
 
-    function offset(columnIndex, maxColumnWidth){
-      var offset = paddingWidth,
-        maxColumnWidth;
+      return string;
+    }
 
-      while(columnIndex--) {
-        maxColumnWidth = getMaxColumnWidth(columnIndex);
-        offset += Math.min(columnWidths[columnIndex], maxColumnWidth) + padding.length;
+    rowMappers[rows.length] = colorMapper;
+
+    addRow.apply(null, row);
+  }
+  api.colored = addColoredRow;
+
+  api.toString = function(){
+    function offset(columnIndex){
+      var offset = 0,
+        index = 0,
+        columnWidth;
+
+      for(; index <= columnIndex; index++){
+        offset += getColumnWidth(columnIndex);
       }
 
       return offset;
     }
 
-    return rows.map(function(row){
-      return padding + row.map(function(element, index){
-        var string = element.toString(),
-          width = columnWidths[index],
-          maxColumnWidth = getMaxColumnWidth(index);
-        
-        if(width > maxColumnWidth){
-          var wrapPadding = sprintf('%' + offset(index) + 's', '');
-          return wrap(string, maxColumnWidth).split('\n').join('\n' + wrapPadding);
-        } else {
-          return sprintf('%-' + width + 's', string);
+    return rows.map(function(row, rowIndex){
+      var rowMapper = rowMappers[rowIndex] || identity;
+      var elementMappers = [];
+
+      var renderedRow = row.map(function(element, columnIndex){
+        // Unpack elements with mappers ['text', mapper]
+        if(Array.isArray(element)){
+          elementMappers[columnIndex] = element[1];
+          element = element[0];
+        } else if(element === undefined){
+          element = '';
         }
-      }).join(padding);
+
+        var string = element.toString(),
+          columnWidth = getColumnWidth(columnIndex);
+     
+        if(strlen(string) > columnWidth){
+          return wrap(string, columnWidth).split('\n');
+        } else {
+          return [sprintf('%-' + columnWidth + 's', string)];
+        }
+      });
+
+      var subrowCount = renderedRow.map(function(subrows){ 
+        return subrows.length;
+      }).reduce(function(a, b){
+          return Math.max(a, b);
+      }, 0);
+      
+      var index = 0;
+      var subrows = [];
+      
+      for(; index < subrowCount; index++){
+        subrows.push(padding + renderedRow.map(function(subrows, columnIndex){
+          if(subrows[index] !== undefined){
+            var columnMapper = columnMappers[columnIndex] || identity;
+            var elementMapper = elementMappers[columnIndex] || identity;
+            return columnMapper(elementMapper(subrows[index]));
+          } else {
+            return sprintf('%' + offset(columnIndex) + 's', '');
+          }
+        }).join(padding));
+      }
+    
+      return rowMapper(subrows.join('\n'));
     }).join('\n');
   };
 
-  return addColumn;
+  return addRow;
 };
 
 module.exports = columnLayout;
 
 function maxStringLength(strArr){
-  return strArr.reduce(function(a, b){ 
-    return a.toString().length > b.toString().length ? a.toString() : b.toString();
-  }, '').length;
+  return strArr.map(function(item){ return strlen(item); })
+    .reduce(function(a, b){ 
+      return Math.max(a, b);
+    }, 0);
 }
+
+function identity(item){ return item; };
 
 function wrap(string, width){
   var index = 0,
@@ -82,8 +174,8 @@ function wrap(string, width){
     chunk;
 
   string = string.replace(/\n/g, '');
-
-  for(index; index < string.length; index += width){
+  var length = strlen(string);
+  for(index; index < length; index += width){
     substr = string.substr(index, width).trim();
     chunks.push(sprintf('%-' + width + 's', substr));
   }

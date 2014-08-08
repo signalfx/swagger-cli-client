@@ -1,148 +1,69 @@
 var clientGenerator = require('swagger-node-client'),
   minimist = require('minimist'),
-  columnLayout = require('./columnLayout');
   path = require('path'),
-  colors = require('colors'),
-  sprintf = require('sprintf-js').sprintf;
 
+  columnLayout = require('./columnLayout'),
+  print = require('./print'),
+  printOperation = require('./printOperation'),
+  printOperations = require('./printOperations'),
+  printResources = require('./printResources');
+  
 module.exports = function(schema){
   var api = clientGenerator(schema);
-
- // console.log(schema);
+  var authMethodName = api.authorization ? 'authorization' : 'auth';
+  var authMethod = api[authMethodName];
 
   var args = minimist(process.argv.slice(2));
-
-  var resourceName = args._[0];
-  var operationName = args._[1];
-  var operationHasArgs = args._.length > 2;
+  var appName = path.basename(process.argv[1]);
+    
+  var resourceName = args._.shift();
+  var operationName = args._.shift();
   
+  if(args.v) return printVersion(schema);
+
+  if(args.auth) authMethod(args.auth);
+
   if(resourceName){
     if(operationName){
       var operation = api[resourceName][operationName];
 
-      if(operationHasArgs){
-        operation(args._[2]).then(function(response){
-          console.log(response);
-        }).catch(function(response){
-          console.error(response);
-        });
-      } else {
-        printOperation(operation);
-      }
+      printOperation(operation, args);
     } else {
       printOperations(api, resourceName);
     }
   } else {
-    printUsage();
+    printUsage(schema, api);
   }
 
-  function printUsage(){
-    var myName = path.basename(process.argv[1]);
-    println('usage: %s [--version] [--auth <auth-token>] <resource> [<args>]', myName);
-    println()
-    if(schema.info && schema.info.title){
-      print(schema.info.title.bold);
-      if(schema.apiVersion) print(' v' + schema.apiVersion.bold);
-      println();
-
-      println(columnLayout.wrap(schema.info.description, 80));
-    }
+  function printVersion(schema){
+    print(appName);
     
-    // print resources
-    println();
-
-    var columns = columnLayout(3, 50);
-    columns('Resource', 'Description');
-
-    Object.keys(api).forEach(function(resourceName){
-      var resource = api[resourceName];
-      if(!(resource.auth || resource.authorization)) return;
-
-      var description = getResourceDescription(resourceName, api[resourceName]);
-      columns(resourceName, description);
-    });
-
-    println(columns.toString());
-  }
-
-  function printOperations(api, resourceName){
-    var resourceApi = api[resourceName];
-
-    var myName = path.basename(process.argv[1]);
-    println('usage: %s %s [--version] [--auth <auth-token>] <operation> [<args>]', myName, resourceName);
-    println()
-
-    var columns = columnLayout(3, 50);
-    columns('Operation', 'Description');
-
-    Object.keys(resourceApi).forEach(function(operationName){
-      var operationHandler = resourceApi[operationName];
-      if(!(operationHandler.auth || operationHandler.authorization)) return;
-      
-      columns(operationName, operationHandler.operation.summary);
-    });
-
-    println(columns.toString());
-  }
-
-  function printOperation(operationHandler){
-    var operation = operationHandler.operation;
-
-    var myName = path.basename(process.argv[1]);
-    println('usage: %s %s [--auth <auth-token>] <operation> [<args>]', myName, operation.nickname);
-    println()
+    if(schema.info && schema.info.title){
+      if(schema.apiVersion) print(' v%s', schema.apiVersion);
+      print(' (%s)', schema.info.title);
+    }
+    print.ln();
   }
 };
 
-function wrap(string, width){
-  var index = 0,
-    chunks = [],
-    chunk;
-
-  string = string.replace(/\n/g, '');
-
-  for(index; index < string.length; index += width){
-    chunks.push(string.substr(index, width));
-  }
-
-  return chunks.join('\n');
-}
-
-function getResourceDescription(resourceName, resourceApi){
-  var apiObject;
+function printUsage(schema, api){
+  var appName = path.basename(process.argv[1]);
   
-  Object.keys(resourceApi).some(function(operationHandlerName){
-    var operationHandler = resourceApi[operationHandlerName];
+  print.ln('usage: %s [-v] [--auth <auth-token>] <resource> [<args>]', appName);
+  print.ln()
+  printInfo(schema);
+  printResources(api);
+}
 
-    if(operationHandler.auth){
-      apiObject = operationHandler.operation.apiObject;
-      return true;
-    } 
-  });
+function printInfo(schema){
+  if(schema.info && schema.info.title){
+    print(schema.info.title.bold);
+    if(schema.apiVersion) print(' v' + schema.apiVersion.bold);
+    print.ln();
 
-  // Since api declaration resource paths are chosen preferentially for naming
-  // of the api (instead of apiObject paths), we'll use the description for it
-  // if it has a resource path
-  if(apiObject.apiDeclaration.resourcePath){
-    return apiObject.resourceObject.description;
-  } else {
-    return apiObject.description;
+    print.ln(columnLayout.wrap(schema.info.description, 80));
   }
+  
+  print.ln();
 }
 
-function println(){
-  print.apply(null, arguments);
-  process.stdout.write('\n');
-}
-
-function print(){
-  var result = sprintf.apply(null, arguments);
-  process.stdout.write(result);
-}
-/*
-usage: petstore [--version] [--auth] <command>
-
-<title> <version>
-<description>
-<tos>
-*/

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
 var swaggerCli = require('../'),
-  schema = require('./schema.json');
+  schema = require('./petstore-schema.json');
 
 swaggerCli(schema);
