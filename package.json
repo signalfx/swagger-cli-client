@@ -1,5 +1,5 @@
 {
-  "name": "swagger-cli",
+  "name": "swagger-cli-client",
   "version": "0.1.1",
   "description": "Generates a command-line interface for any Swagger Specification",
   "keywords": [],
