@@ -1,6 +1,6 @@
 {
   "name": "swagger-cli-client",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Generates a command-line interface for any Swagger Specification",
   "keywords": [],
   "main": "./src/client.js",

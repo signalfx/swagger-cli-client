@@ -29,7 +29,7 @@ function getResourceDescription(resourceApi){
   Object.keys(resourceApi).some(function(operationHandlerName){
     var operationHandler = resourceApi[operationHandlerName];
 
-    if(operationHandler.auth){
+    if(operationHandler.auth || operationHandler.authorization){
       apiObject = operationHandler.operation.apiObject;
       return true;
     } 
