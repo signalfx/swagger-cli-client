@@ -1,6 +1,7 @@
 var clientGenerator = require('swagger-node-client'),
   minimist = require('minimist'),
   path = require('path'),
+  colors = require('colors'),
 
   columnLayout = require('./columnLayout'),
   print = require('./print'),
@@ -24,10 +25,21 @@ module.exports = function(schema){
   if(args.auth) authMethod(args.auth);
 
   if(resourceName){
-    if(operationName){
-      var operation = api[resourceName][operationName];
+    var resource = api[resourceName];
 
-      printOperation(operation, args);
+    if(!resource){
+      printUsage(schema, api, new Error('Unknown resource: ' + resourceName));
+      return;
+    }
+
+    if(operationName){
+      var operationHandler = resource[operationName];
+      if(!operationHandler){
+        printOperations(api, resourceName, new Error('Unknown operation: ' + operationName));
+        return;
+      }
+
+      printOperation(operationHandler, args);
     } else {
       printOperations(api, resourceName);
     }
@@ -46,11 +58,17 @@ module.exports = function(schema){
   }
 };
 
-function printUsage(schema, api){
+function printUsage(schema, api, error){
   var appName = path.basename(process.argv[1]);
   
   print.ln('usage: %s [-v] [--auth <auth-token>] <resource> [<args>]', appName);
   print.ln()
+
+  if(error){
+    print.ln(colors.red(error.toString()));
+    print.ln();
+  }
+
   printInfo(schema);
   printResources(api);
 }

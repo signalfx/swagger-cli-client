@@ -83,9 +83,10 @@ function singleParamConvenienceProcessor(operation, data){
 
 function printOperation(operationHandler, error){
   var operation = operationHandler.operation;
-
+  var resourceName = getResourceApiName(operation.apiObject);
+  
   var appName = path.basename(process.argv[1]);
-  print.ln('usage: %s %s [--auth <auth-token>] [--<parameter> <parameterValue]', appName, operation.nickname);
+  print.ln('usage: %s %s %s [--auth <auth-token>] [--<parameter> <parameterValue]', appName, resourceName, operation.nickname);
   print.ln()
 
   if(error){
@@ -111,4 +112,21 @@ function printOperation(operationHandler, error){
   print.ln(columns.toString());
   print.ln();
   print.ln('   *required parameter');
+}
+
+// Takes a path and returns a JavaScript-friendly variable name
+function getResourceApiName(apiObject){
+  var path = apiObject.apiDeclaration.resourcePath || apiObject.path;
+
+  // String non-word characters
+  path = path.replace(/\W/g, '/');
+
+  // Turn paths which look/like/this to lookLikeThis
+  path = path.replace(/(\w)\/(\w)/g, function(match, p1, p2){
+    return p1 + p2.toUpperCase();
+  });
+
+  path = path.replace(/\//g, '');
+
+  return path;
 }
