@@ -99,12 +99,12 @@ function printOperation(operationHandler, error){
 
   operation.parameters.sort(function(a, b){
     if(a.required && b.required) return a.name.localeCompare(b.name);
-    if(a.required) return 1;
-    return -1;
+    if(a.required) return -1;
+    return 1;
   }).forEach(function(parameter){
     columns(
       parameter.name + (parameter.required?'*':''), 
-      parameter.type,
+      parameter.type || parameter.dataType,
       parameter.description
     );
   });
