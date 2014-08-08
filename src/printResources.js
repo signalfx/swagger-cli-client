@@ -4,7 +4,7 @@ var columnLayout = require('./columnLayout'),
 function printResources(api){
   var columns = columnLayout({ 
     padding: 3, 
-    maxColumnWidths: [20, 40]
+    maxColumnWidths: [20, 60]
   });
 
   columns.colored('bold', 'Resource', 'Description');

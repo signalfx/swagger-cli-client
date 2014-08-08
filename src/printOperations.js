@@ -9,7 +9,10 @@ module.exports = function printOperations(api, resourceName){
   print.ln('usage: %s %s [-v] [--auth <auth-token>] <operation> [<args>]', appName, resourceName);
   print.ln()
 
-  var columns = columnLayout(3, 50);
+  var columns = columnLayout({ 
+    padding: 3, 
+    maxColumnWidths: [20, 60]
+  });
   columns.colored('bold', 'Operation', 'Description');
 
   Object.keys(resourceApi).forEach(function(operationName){
