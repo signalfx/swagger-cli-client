@@ -1,0 +1,40 @@
+{
+  "name": "swagger-cli",
+  "version": "0.1.0",
+  "description": "Generates a command-line interface for any Swagger Specification",
+  "keywords": [],
+  "main": "./src/client.js",
+  "devDependencies": {},
+  "directories": {},
+  "author": {
+    "name": "Ozan Turgut",
+    "email": "ozanturgut@gmail.com",
+    "url": "http://ozan.io"
+  },
+  "scripts": {
+    "test": "exit 0"
+  },
+  "licenses": [
+    {
+      "type": "Apache License 2.0",
+      "url": "https://github.com/signalfuse/swagger-cli/blob/master/LICENSE-APACHE2"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/signalfuse/swagger-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/signalfuse/swagger-cli/issues"
+  },
+  "homepage": "https://github.com/signalfuse/swagger-cli",
+  "dependencies": {
+    "swagger-node-client": "^0.2.0",
+    "commander": "^2.3.0",
+    "minimist": "^0.2.0",
+    "colors": "^0.6.2",
+    "cli-table": "^0.3.0",
+    "sprintfjs": "^1.1.4",
+    "sprintf-js": "0.0.7"
+  }
+}
