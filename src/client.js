@@ -24,7 +24,6 @@ module.exports = function(schema){
   if(args.v) return printVersion(schema);
 
   var auth = args.auth || tryToGetAuth();
-  console.log('AUTH', auth);
   if(auth) authMethod(auth);
 
   if(resourceName){
@@ -76,7 +75,6 @@ function tryToGetAuth(){
     var config = yaml.safeLoad(fs.readFileSync(configFile));
     return config.auth;
   } catch(e){
-    console.log(e);
     // it's ok to fail here
   }
 }
