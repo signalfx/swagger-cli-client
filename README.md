@@ -18,3 +18,6 @@ swaggerCli(schema);
 ```
 
 To create a cli app for your schema, just require your schema instead of the petstore schema.
+
+## Auth lookup strategy
+By default the cli will first use the `--auth` param (if defined), then it'll use the `<appname>_AUTH` (e.g., PETSTORECLI_AUTH) env variable (if defined), and finally a yaml/json file called `.<app-name>` (e.g. ~/.petstore-cli which may contain `{ "auth" : "my-token" }`.
