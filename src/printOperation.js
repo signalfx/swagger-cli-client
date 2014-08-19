@@ -31,7 +31,12 @@ function handleOperation(operationHandler, args, models){
     data = args;
   }
 
-  var errors = operationHandler.validate(data, operation, models);
+  var errors;
+  try {
+    e = operationHandler.validate(data, operation, models);
+  } catch (e) {
+    errors = new Error('Invalid query');
+  }
 
   if(errors || args.h){
     printOperation(operationHandler, errors);
@@ -68,7 +73,11 @@ function singleParamConvenienceProcessor(operation, data){
   // If the data passed is is not valid for the param data type, bail
   var error;
   if(typeof data === 'object'){
-    error = validate.dataType(data, param, models); 
+    try {
+      error = validate.dataType(data, param, models); 
+    } catch(e) {
+      error = e;
+    }
   }
   
   // If the data passed is a valid param data type, bail
