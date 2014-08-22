@@ -12,14 +12,25 @@ var clientGenerator = require('swagger-node-client'),
   printResources = require('./printResources');
   
 module.exports = function(schema){
+  var args = minimist(process.argv.slice(2));
+  var appName = path.basename(process.argv[1]);
+  var resourceName = args._.shift();
+  var operationName = args._.shift();
+  
+  var basePathOverride = args.basePathOverride || tryToGetBasePathOverride();
+  if(basePathOverride) {
+    print.ln();
+    print.ln('Overridding base API path to %s'.red, basePathOverride);
+    print.ln();
+    // Override the base path
+    schema.apis.forEach(function(api){
+      api.apiDeclaration.basePath = basePathOverride;
+    });
+  }
+
   var api = clientGenerator(schema);
   var authMethodName = api.authorization ? 'authorization' : 'auth';
   var authMethod = api[authMethodName];
-  var args = minimist(process.argv.slice(2));
-  var appName = path.basename(process.argv[1]);
-
-  var resourceName = args._.shift();
-  var operationName = args._.shift();
   
   if(args.v) return printVersion(schema);
 
@@ -59,6 +70,25 @@ module.exports = function(schema){
     print.ln();
   }
 };
+
+function tryToGetBasePathOverride(){
+  var appName = path.basename(process.argv[1]);
+  
+  // Attempt to get it from the env
+  var envVar = appName.replace(/\W/g, '').toUpperCase() + '_BASE_PATH';
+  var auth =  process.env[envVar];
+  if(auth) return auth;
+
+  // Attempt to get it form the ~/.<appname> json file 
+  var homeDir =  process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+  var configFile = path.resolve(homeDir, '.' + appName);
+  try {
+    var config = yaml.safeLoad(fs.readFileSync(configFile));
+    return config.basePath;
+  } catch(e){
+    // it's ok to fail here
+  }
+}
 
 function tryToGetAuth(){
   var appName = path.basename(process.argv[1]);
