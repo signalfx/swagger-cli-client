@@ -103,7 +103,9 @@ function printOperation(operationHandler, error){
     print.ln();
   }
 
-  var columns = columnLayout(3, 50);
+  var columns = columnLayout({
+    padding: 3, 
+    maxColumnWidths: [20, 20, 60]});
   columns.colored('bold', 'Parameter', 'Type', 'Description');
 
   operation.parameters.sort(function(a, b){
@@ -116,6 +118,8 @@ function printOperation(operationHandler, error){
       parameter.type || parameter.dataType,
       parameter.description
     );
+    
+    columns('', '', '');
   });
 
   print.ln(columns.toString());

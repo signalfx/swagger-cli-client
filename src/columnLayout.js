@@ -146,7 +146,7 @@ function columnLayout(paddingWidth, columnWidthOption){
           } else {
             return sprintf('%' + offset(columnIndex) + 's', '');
           }
-        }).join(padding));
+        }).join(index? '': padding)); // only add padding to first row
       }
     
       return rowMapper(subrows.join('\n'));
