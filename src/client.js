@@ -7,16 +7,22 @@ var clientGenerator = require('swagger-node-client'),
 
   columnLayout = require('./columnLayout'),
   print = require('./print'),
-  printOperation = require('./printOperation'),
-  printOperations = require('./printOperations'),
+  printOperationFactory = require('./printOperation'),
+  printOperationsFactory = require('./printOperations'),
   printResources = require('./printResources');
   
-module.exports = function(schema){
-  var args = minimist(process.argv.slice(2));
-  var appName = path.basename(process.argv[1]);
+module.exports = function(schema, argv, env){
+  argv = argv || process.argv;
+  env = env || process.env;
+
+  var args = minimist(argv.slice(2));
+  var appName = path.basename(argv[1]);
   var resourceName = args._.shift();
   var operationName = args._.shift();
   
+  var printOperation = printOperationFactory(appName);
+  var printOperations = printOperationsFactory(appName);
+
   var basePathOverride = args.basePathOverride || tryToGetBasePathOverride();
   if(basePathOverride) {
     print.ln();
@@ -69,70 +75,69 @@ module.exports = function(schema){
     }
     print.ln();
   }
+
+  function tryToGetBasePathOverride(){
+    var appName = path.basename(argv[1]);
+    
+    // Attempt to get it from the env
+    var envVar = appName.replace(/\W/g, '').toUpperCase() + '_BASE_PATH';
+    var auth =  env[envVar];
+    if(auth) return auth;
+
+    // Attempt to get it form the ~/.<appname> json file 
+    var homeDir =  env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+    var configFile = path.resolve(homeDir, '.' + appName);
+    try {
+      var config = yaml.safeLoad(fs.readFileSync(configFile));
+      return config.basePath;
+    } catch(e){
+      // it's ok to fail here
+    }
+  }
+
+  function tryToGetAuth(){
+    var appName = path.basename(argv[1]);
+    
+    // Attempt to get it from the env
+    var envVar = appName.replace(/\W/g, '').toUpperCase() + '_AUTH';
+    var auth =  env[envVar];
+    if(auth) return auth;
+
+    // Attempt to get it form the ~/.<appname> json file 
+    var homeDir =  env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+    var configFile = path.resolve(homeDir, '.' + appName);
+    try {
+      var config = yaml.safeLoad(fs.readFileSync(configFile));
+      return config.auth;
+    } catch(e){
+      // it's ok to fail here
+    }
+  }
+
+  function printUsage(schema, api, error){
+    var appName = path.basename(argv[1]);
+    
+    print.ln('usage: %s [-v] [--auth <auth-token>] <resource> [<args>]', appName);
+    print.ln()
+
+    if(error){
+      print.ln(colors.red(error.toString()));
+      print.ln();
+    }
+
+    printInfo(schema);
+    printResources(api);
+  }
+
+  function printInfo(schema){
+    if(schema.info && schema.info.title){
+      print(schema.info.title.bold);
+      if(schema.apiVersion) print(' v' + schema.apiVersion.bold);
+      print.ln();
+
+      print.ln(columnLayout.wrap(schema.info.description, 80));
+    }
+    
+    print.ln();
+  }
 };
-
-function tryToGetBasePathOverride(){
-  var appName = path.basename(process.argv[1]);
-  
-  // Attempt to get it from the env
-  var envVar = appName.replace(/\W/g, '').toUpperCase() + '_BASE_PATH';
-  var auth =  process.env[envVar];
-  if(auth) return auth;
-
-  // Attempt to get it form the ~/.<appname> json file 
-  var homeDir =  process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
-  var configFile = path.resolve(homeDir, '.' + appName);
-  try {
-    var config = yaml.safeLoad(fs.readFileSync(configFile));
-    return config.basePath;
-  } catch(e){
-    // it's ok to fail here
-  }
-}
-
-function tryToGetAuth(){
-  var appName = path.basename(process.argv[1]);
-  
-  // Attempt to get it from the env
-  var envVar = appName.replace(/\W/g, '').toUpperCase() + '_AUTH';
-  var auth =  process.env[envVar];
-  if(auth) return auth;
-
-  // Attempt to get it form the ~/.<appname> json file 
-  var homeDir =  process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
-  var configFile = path.resolve(homeDir, '.' + appName);
-  try {
-    var config = yaml.safeLoad(fs.readFileSync(configFile));
-    return config.auth;
-  } catch(e){
-    // it's ok to fail here
-  }
-}
-
-function printUsage(schema, api, error){
-  var appName = path.basename(process.argv[1]);
-  
-  print.ln('usage: %s [-v] [--auth <auth-token>] <resource> [<args>]', appName);
-  print.ln()
-
-  if(error){
-    print.ln(colors.red(error.toString()));
-    print.ln();
-  }
-
-  printInfo(schema);
-  printResources(api);
-}
-
-function printInfo(schema){
-  if(schema.info && schema.info.title){
-    print(schema.info.title.bold);
-    if(schema.apiVersion) print(' v' + schema.apiVersion.bold);
-    print.ln();
-
-    print.ln(columnLayout.wrap(schema.info.description, 80));
-  }
-  
-  print.ln();
-}
-

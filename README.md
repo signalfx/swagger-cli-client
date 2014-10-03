@@ -6,7 +6,7 @@ Generates a command-line interface for any
 ![Example usage](https://i.imgur.com/IVhxFlE.png)
 
 ## Usage
-This intended to be embedded within a wrapper application which can provide it the schema object (which is generated using [fetch-swagger-schema](https://github.com/signalfuse/fetch-swagger-schema)). For example, here's the petstore-cli file:
+This intended to be embedded within a wrapper application which can provide it the schema object (which is generated using [fetch-swagger-schema](https://github.com/signalfx/fetch-swagger-schema)). For example, here's the petstore-cli file:
 
 ```javascript
 #!/usr/bin/env node

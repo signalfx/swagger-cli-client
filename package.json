@@ -1,6 +1,6 @@
 {
   "name": "swagger-cli-client",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Generates a command-line interface for any Swagger Specification",
   "keywords": [],
   "main": "./src/client.js",
@@ -17,17 +17,17 @@
   "licenses": [
     {
       "type": "Apache License 2.0",
-      "url": "https://github.com/signalfuse/swagger-cli/blob/master/LICENSE-APACHE2"
+      "url": "https://github.com/signalfx/swagger-cli/blob/master/LICENSE-APACHE2"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/signalfuse/swagger-cli.git"
+    "url": "git://github.com/signalfx/swagger-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/signalfuse/swagger-cli/issues"
+    "url": "https://github.com/signalfx/swagger-cli/issues"
   },
-  "homepage": "https://github.com/signalfuse/swagger-cli",
+  "homepage": "https://github.com/signalfx/swagger-cli",
   "dependencies": {
     "swagger-node-client": "^0.2.0",
     "commander": "^2.3.0",
